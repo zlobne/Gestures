@@ -1,4 +1,4 @@
-package wj.app.audio.gestures;
+package ololoev.gestures.lib;
 
 import android.content.Context;
 import android.view.MotionEvent;
