@@ -1,6 +1,7 @@
 package ololoev.gestures.lib;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.MotionEvent;
 
 /**
@@ -13,7 +14,9 @@ public class SwipeGestureDetector extends BaseGestureDetector{
     private boolean isMultiTouch = false;
     private static final long MULTITOUCH_DELAY = 500;
     private long mTouchStart;
-    boolean hasMoved = false;
+    private boolean hasMoved = false;
+    private boolean hasMoved2 = false;
+    private boolean hasMoved3 = false;
 
     private final OnSwipeGestureListener mListener;
 
@@ -31,8 +34,52 @@ public class SwipeGestureDetector extends BaseGestureDetector{
         public boolean OnTwoFingerSwipeDown(SwipeGestureDetector detector);
         public boolean OnTwoFingerSwipeLeft(SwipeGestureDetector detector);
         public boolean OnTwoFingerSwipeRight(SwipeGestureDetector detector);
+        public boolean OnThreeFingerSwipeUp(SwipeGestureDetector detector);
+        public boolean OnThreeFingerSwipeDown(SwipeGestureDetector detector);
+        public boolean OnThreeFingerSwipeLeft(SwipeGestureDetector detector);
+        public boolean OnThreeFingerSwipeRight(SwipeGestureDetector detector);
 
     }
+
+    public static class SimpleOnSwipeGestureListener implements OnSwipeGestureListener {
+        public boolean OnSwipeUp(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnSwipeDown(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnSwipeLeft(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnSwipeRight(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnTwoFingerSwipeUp(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnTwoFingerSwipeDown(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnTwoFingerSwipeLeft(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnTwoFingerSwipeRight(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnThreeFingerSwipeUp(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnThreeFingerSwipeDown(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnThreeFingerSwipeLeft(SwipeGestureDetector detector){
+            return true;
+        };
+        public boolean OnThreeFingerSwipeRight(SwipeGestureDetector detector){
+            return true;
+        };
+    }
+
     @Override
     protected void handleAction(int actionCode, MotionEvent event) {
         switch (actionCode) {
@@ -42,7 +89,21 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                 hasMoved = false;
                 break;
             case MotionEvent.ACTION_MOVE:
-                hasMoved = moved(event);
+                if (event.getPointerCount() == 1) {
+                    hasMoved = moved(event);
+                    hasMoved2 = false;
+                    hasMoved3 = false;
+                }
+                if (event.getPointerCount() == 2) {
+                    hasMoved2 = moved(event);
+                    hasMoved = false;
+                    hasMoved3 = false;
+                }
+                if (event.getPointerCount() == 3) {
+                    hasMoved3 = moved(event);
+                    hasMoved = false;
+                    hasMoved2 = false;
+                }
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
                 isMultiTouch = (mTouchStart - System.currentTimeMillis()) < MULTITOUCH_DELAY;
@@ -51,7 +112,7 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                 isMultiTouch = false;
                 break;
             case MotionEvent.ACTION_UP:
-                if (hasMoved) {
+                if (hasMoved || hasMoved2 || hasMoved3) {
                     float currentX = event.getX(0);
                     float currentY = event.getY(0);
                     long currentTime = System.currentTimeMillis();
@@ -60,37 +121,60 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                     long time = currentTime - mTouchStart;
                     if (diffX > 100) {
                         if (downX < currentX) {
-                            if (event.getPointerCount() == 1) {
-                                mListener.OnSwipeRight(this);
+                            if (hasMoved3) {
+                                mListener.OnThreeFingerSwipeRight(this);
+                                break;
                             }
-                            if (event.getPointerCount() == 2) {
+                            if (hasMoved2) {
                                 mListener.OnTwoFingerSwipeRight(this);
+                                break;
+                            }
+                            if (hasMoved) {
+                                mListener.OnSwipeRight(this);
+                                break;
                             }
                         }
                         if (downX > currentX) {
-                            if (event.getPointerCount() == 1) {
-                                mListener.OnSwipeLeft(this);
+                            if (hasMoved3) {
+                                mListener.OnThreeFingerSwipeLeft(this);
+                                break;
                             }
-                            if (event.getPointerCount() == 2) {
+                            if (hasMoved2) {
                                 mListener.OnTwoFingerSwipeLeft(this);
+                                break;
+                            }
+                            if (hasMoved) {
+                                mListener.OnSwipeLeft(this);
+                                break;
                             }
                         }
                     }
                     if (diffY > 100) {
                         if (downY < currentY) {
-                            if (event.getPointerCount() == 1) {
-                                mListener.OnSwipeDown(this);
+                            if (hasMoved3) {
+                                mListener.OnThreeFingerSwipeDown(this);
+                                break;
                             }
-                            if (event.getPointerCount() == 2) {
+                            if (hasMoved2) {
                                 mListener.OnTwoFingerSwipeDown(this);
+                                break;
+                            }
+                            if (hasMoved) {
+                                mListener.OnSwipeDown(this);
+                                break;
                             }
                         }
                         if (downY > currentY) {
-                            if (event.getPointerCount() == 1) {
-                                mListener.OnSwipeUp(this);
+                            if (hasMoved3) {
+                                mListener.OnThreeFingerSwipeUp(this);
+                                break;
                             }
-                            if (event.getPointerCount() == 2) {
+                            if (hasMoved2) {
                                 mListener.OnTwoFingerSwipeUp(this);
+                                break;
+                            }
+                            if (hasMoved) {
+                                mListener.OnSwipeUp(this);
                             }
                         }
                     }
