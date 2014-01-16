@@ -1,8 +1,10 @@
-package ololoev.gestures.lib;
+package wj.app.navigator.gestures;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.MotionEvent;
+
+import wj.app.lib.logger.Logger;
+import wj.app.navigator.R;
 
 /**
  * Created by Anton Prozorov on 13.01.14.
@@ -11,18 +13,27 @@ public class SwipeGestureDetector extends BaseGestureDetector{
 
     private float downX = 0;
     private float downY = 0;
+    private float downX1 = 0;
+    private float downY1 = 0;
     private boolean isMultiTouch = false;
     private static final long MULTITOUCH_DELAY = 500;
     private long mTouchStart;
     private boolean hasMoved = false;
-    private boolean hasMoved2 = false;
-    private boolean hasMoved3 = false;
+    private static int SWIPE_MINIMAL_THRESHOLD = 0;
+    private int pointerCount;
+    private float currentX = 0;
+    private float currentY = 0;
+    private float currentX1 = 0;
+    private float currentY1 = 0;
 
     private final OnSwipeGestureListener mListener;
 
     public SwipeGestureDetector(Context context, OnSwipeGestureListener listener) {
         super(context);
         mListener = listener;
+        if (SWIPE_MINIMAL_THRESHOLD == 0) {
+            SWIPE_MINIMAL_THRESHOLD = context.getResources().getDimensionPixelSize(R.dimen.swipe_threshold);
+        }
     }
 
     public interface OnSwipeGestureListener {
@@ -38,50 +49,55 @@ public class SwipeGestureDetector extends BaseGestureDetector{
         public boolean OnThreeFingerSwipeDown(SwipeGestureDetector detector);
         public boolean OnThreeFingerSwipeLeft(SwipeGestureDetector detector);
         public boolean OnThreeFingerSwipeRight(SwipeGestureDetector detector);
+        public boolean Unknown(SwipeGestureDetector detector);
 
     }
 
     public static class SimpleOnSwipeGestureListener implements OnSwipeGestureListener {
         public boolean OnSwipeUp(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnSwipeDown(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnSwipeLeft(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnSwipeRight(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnTwoFingerSwipeUp(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnTwoFingerSwipeDown(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnTwoFingerSwipeLeft(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnTwoFingerSwipeRight(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnThreeFingerSwipeUp(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnThreeFingerSwipeDown(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnThreeFingerSwipeLeft(SwipeGestureDetector detector){
-            return true;
+            return false;
         };
         public boolean OnThreeFingerSwipeRight(SwipeGestureDetector detector){
+            return false;
+        };
+        public boolean Unknown(SwipeGestureDetector detector){
             return true;
         };
     }
 
     @Override
     protected void handleAction(int actionCode, MotionEvent event) {
+
         switch (actionCode) {
             case MotionEvent.ACTION_DOWN:
                 downX = event.getX(0);
@@ -89,101 +105,109 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                 hasMoved = false;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (event.getPointerCount() == 1) {
-                    hasMoved = moved(event);
-                    hasMoved2 = false;
-                    hasMoved3 = false;
+                if (event.getPointerCount() > pointerCount) {
+                    pointerCount = event.getPointerCount();
                 }
-                if (event.getPointerCount() == 2) {
-                    hasMoved2 = moved(event);
-                    hasMoved = false;
-                    hasMoved3 = false;
+                hasMoved = moved(event);
+                currentX = event.getX(0);
+                currentY = event.getY(0);
+                if (event.getPointerCount() > 1) {
+                    currentX1 = event.getX(1);
+                    currentY1 = event.getY(1);
                 }
-                if (event.getPointerCount() == 3) {
-                    hasMoved3 = moved(event);
-                    hasMoved = false;
-                    hasMoved2 = false;
+                if ((downX - currentX > 0) && (downX1 - currentX1 < 0) || ((downX - currentX < 0) &&(downX1 - currentX1 > 0))) {
+                    pointerCount = 1;
                 }
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
+                downX1 = event.getX(1);
                 isMultiTouch = (mTouchStart - System.currentTimeMillis()) < MULTITOUCH_DELAY;
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 isMultiTouch = false;
                 break;
             case MotionEvent.ACTION_UP:
-                if (hasMoved || hasMoved2 || hasMoved3) {
-                    float currentX = event.getX(0);
-                    float currentY = event.getY(0);
-                    long currentTime = System.currentTimeMillis();
-                    float diffX = Math.abs(downX - currentX);
-                    float diffY = Math.abs(downY - currentY);
-                    long time = currentTime - mTouchStart;
-                    if (diffX > 100) {
-                        if (downX < currentX) {
-                            if (hasMoved3) {
+                currentX = event.getX(0);
+                currentY = event.getY(0);
+                long currentTime = System.currentTimeMillis();
+                float diffX = Math.abs(currentX - downX);
+                float diffY = Math.abs(currentY - downY);
+                long time = currentTime - mTouchStart;
+                if (hasMoved && (diffX > SWIPE_MINIMAL_THRESHOLD)) {
+                    if (downX < currentX) {
+                        switch (pointerCount) {
+                            case 3:
                                 mListener.OnThreeFingerSwipeRight(this);
                                 break;
-                            }
-                            if (hasMoved2) {
-                                mListener.OnTwoFingerSwipeRight(this);
+                            case 2:
+                                if (downX1 < currentX1) {
+                                    mListener.OnTwoFingerSwipeRight(this);
+                                }
+                                else {
+                                    mListener.Unknown(this);
+                                }
                                 break;
-                            }
-                            if (hasMoved) {
+                            case 1:
                                 mListener.OnSwipeRight(this);
                                 break;
-                            }
-                        }
-                        if (downX > currentX) {
-                            if (hasMoved3) {
-                                mListener.OnThreeFingerSwipeLeft(this);
-                                break;
-                            }
-                            if (hasMoved2) {
-                                mListener.OnTwoFingerSwipeLeft(this);
-                                break;
-                            }
-                            if (hasMoved) {
-                                mListener.OnSwipeLeft(this);
-                                break;
-                            }
                         }
                     }
-                    if (diffY > 100) {
-                        if (downY < currentY) {
-                            if (hasMoved3) {
-                                mListener.OnThreeFingerSwipeDown(this);
+                    if (downX > currentX) {
+                        switch (pointerCount) {
+                            case 3:
+                                mListener.OnThreeFingerSwipeLeft(this);
                                 break;
-                            }
-                            if (hasMoved2) {
-                                mListener.OnTwoFingerSwipeDown(this);
+                            case 2:
+                                if (downX1 > currentX1) {
+                                    mListener.OnTwoFingerSwipeLeft(this);
+                                }
+                                else {
+                                    mListener.Unknown(this);
+                                }
                                 break;
-                            }
-                            if (hasMoved) {
-                                mListener.OnSwipeDown(this);
+                            case 1:
+                                mListener.OnSwipeLeft(this);
                                 break;
-                            }
-                        }
-                        if (downY > currentY) {
-                            if (hasMoved3) {
-                                mListener.OnThreeFingerSwipeUp(this);
-                                break;
-                            }
-                            if (hasMoved2) {
-                                mListener.OnTwoFingerSwipeUp(this);
-                                break;
-                            }
-                            if (hasMoved) {
-                                mListener.OnSwipeUp(this);
-                            }
                         }
                     }
                 }
-                break;
+                if (diffY > SWIPE_MINIMAL_THRESHOLD) {
+                    if (downY < currentY) {
+                        switch (pointerCount) {
+                            case 3:
+                                mListener.OnThreeFingerSwipeDown(this);
+                                break;
+                            case 2:
+                                mListener.OnTwoFingerSwipeDown(this);
+                                break;
+                            case 1:
+                                mListener.OnSwipeDown(this);
+                                break;
+                        }
+                    }
+                    if (downY > currentY) {
+                        switch (pointerCount) {
+                            case 3:
+                                mListener.OnThreeFingerSwipeUp(this);
+                                break;
+                            case 2:
+                                mListener.OnTwoFingerSwipeUp(this);
+                                break;
+                            case 1:
+                                mListener.OnSwipeUp(this);
+                                break;
+                        }
+                    }
+                }
+                pointerCount = 0;
+                currentX1 = 0;
+                downX1 = 0;
+                currentX = 0;
+                downX = 0;
         }
     }
 
     private boolean moved(MotionEvent e) {
-        return (Math.abs(e.getX(0) - downX) > 10);
+        return (Math.abs(e.getX(0) - downX) > 50);
     }
 }
