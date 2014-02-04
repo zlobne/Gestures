@@ -1,10 +1,9 @@
-package wj.app.navigator.gestures;
+package ololoev.gestures.lib;
 
 import android.content.Context;
 import android.view.MotionEvent;
 
-import wj.app.lib.logger.Logger;
-import wj.app.navigator.R;
+import zlobne.gestures.lib.R;
 
 /**
  * Created by Anton Prozorov on 13.01.14.
@@ -25,6 +24,7 @@ public class SwipeGestureDetector extends BaseGestureDetector{
     private float currentY = 0;
     private float currentX1 = 0;
     private float currentY1 = 0;
+    private boolean isSwipe = true;
 
     private final OnSwipeGestureListener mListener;
 
@@ -116,7 +116,7 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                     currentY1 = event.getY(1);
                 }
                 if ((downX - currentX > 0) && (downX1 - currentX1 < 0) || ((downX - currentX < 0) &&(downX1 - currentX1 > 0))) {
-                    pointerCount = 1;
+                    isSwipe = false;
                 }
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
@@ -133,7 +133,7 @@ public class SwipeGestureDetector extends BaseGestureDetector{
                 float diffX = Math.abs(currentX - downX);
                 float diffY = Math.abs(currentY - downY);
                 long time = currentTime - mTouchStart;
-                if (hasMoved && (diffX > SWIPE_MINIMAL_THRESHOLD)) {
+                if (hasMoved && (diffX > SWIPE_MINIMAL_THRESHOLD) && isSwipe) {
                     if (downX < currentX) {
                         switch (pointerCount) {
                             case 3:
